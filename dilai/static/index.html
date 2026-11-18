@@ -1,0 +1,730 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Langu-AI</title>
+<style>
+:root{
+  --bg:#f6f4ef; --panel:#fbfaf7; --card:#ffffff; --ink:#22252b; --muted:#6d717a; --line:#e3dfd6;
+  --accent:#2f6f5e; --accent-soft:#e2efea; --me:#e9eef6; --warn:#a2541b; --warn-soft:#fbefe2;
+  --ok:#2f7d4f; --bad:#b3402f; --mark:#b98a2c;
+  --A1:#7a9a3a; --A2:#4f9a6b; --B1:#3a8f9a; --B2:#3f6fb0; --C1:#6a58b5; --C2:#9a4f9a;
+}
+@media (prefers-color-scheme: dark){:root{
+  --bg:#17191c; --panel:#1c1f23; --card:#23272c; --ink:#e6e4df; --muted:#9a9ea6; --line:#31363d;
+  --accent:#6fbfa8; --accent-soft:#213a34; --me:#27303c; --warn:#e0a26b; --warn-soft:#3a2c1f;
+  --ok:#6cc08b; --bad:#e58374; --mark:#d6ac55;
+}}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--ink);font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Inter,sans-serif;display:flex;flex-direction:column}
+button,select,input,textarea{font:inherit;color:inherit}
+button{cursor:pointer;border:1px solid var(--line);background:var(--card);border-radius:8px;padding:6px 12px}
+button:hover{border-color:var(--accent)}
+button.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+@media (prefers-color-scheme: dark){button.primary{color:#10201b}}
+button.ghost{border-color:transparent;background:transparent;color:var(--muted);padding:4px 8px}
+button.ghost:hover{color:var(--ink);border-color:var(--line)}
+button:disabled{opacity:.5;cursor:default}
+select,input[type=text],textarea{border:1px solid var(--line);background:var(--card);border-radius:8px;padding:6px 10px}
+header{display:flex;align-items:center;gap:12px;padding:10px 18px;border-bottom:1px solid var(--line);background:var(--panel)}
+header h1{font-size:16px;margin:0;font-weight:650;letter-spacing:.2px}
+header .sp{flex:1}
+header select{max-width:300px}
+main{flex:1;display:flex;min-height:0}
+#chat{flex:1;display:flex;flex-direction:column;min-width:0}
+#msgs{flex:1;overflow-y:auto;padding:26px 28px 12px}
+.row{display:flex;gap:14px;margin:0 auto 16px;max-width:900px;align-items:flex-start}
+.row.user{justify-content:flex-end}
+.bubble{max-width:620px;padding:11px 15px;border-radius:14px;white-space:pre-wrap;word-wrap:break-word}
+.row.ai .bubble{background:var(--card);border:1px solid var(--line);font-family:Charter,"Iowan Old Style",Georgia,serif;font-size:16.5px;line-height:1.6}
+.row.user .bubble{background:var(--me)}
+.notes{display:flex;flex-direction:column;gap:6px;max-width:300px;flex:0 1 300px;margin-top:2px}
+.note{font-size:12.5px;line-height:1.4;background:var(--warn-soft);border-left:3px solid var(--warn);border-radius:6px;padding:6px 9px;cursor:pointer}
+.note.minor{border-left-color:var(--mark)}
+.note s{color:var(--muted)}
+.note b{font-weight:600}
+.note .why{display:none;color:var(--muted);margin-top:3px}
+.note.open .why{display:block}
+.note .cat{font-size:10.5px;text-transform:uppercase;letter-spacing:.5px;color:var(--warn);margin-right:6px}
+.w{border-bottom:1.5px dotted var(--mark);cursor:pointer}
+.w:hover{background:var(--accent-soft)}
+.typing{color:var(--muted);font-size:13px;max-width:900px;margin:0 auto 12px;min-height:20px}
+.err{max-width:900px;margin:0 auto 12px;background:var(--warn-soft);border:1px solid var(--warn);border-radius:8px;padding:8px 12px;font-size:13.5px}
+#composer{border-top:1px solid var(--line);padding:12px 28px 16px;background:var(--panel)}
+#composer .in{max-width:900px;margin:0 auto;display:flex;gap:10px;align-items:flex-end}
+#composer textarea{flex:1;resize:none;min-height:44px;max-height:180px;padding:10px 12px}
+#composer button.live{background:var(--bad);border-color:var(--bad);color:#fff}
+#composer button.on{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
+#vstat{max-width:900px;margin:0 auto 6px;font-size:12.5px;color:var(--muted);min-height:18px}
+.row.ai{flex-wrap:wrap}
+.say{font-size:11.5px;color:var(--muted);cursor:pointer;align-self:flex-end;user-select:none}
+.say:hover{color:var(--accent)}
+.empty{max-width:560px;margin:8vh auto 0;text-align:center;color:var(--muted)}
+.empty h2{color:var(--ink);font-weight:600;margin-bottom:6px}
+aside{width:390px;border-left:1px solid var(--line);background:var(--panel);display:flex;flex-direction:column;min-height:0}
+.tabs{display:flex;border-bottom:1px solid var(--line);padding:0 8px;overflow-x:auto;flex:none}
+.tabs button{white-space:nowrap}
+.tabs button{border:0;border-bottom:2px solid transparent;border-radius:0;background:none;padding:10px 7px;color:var(--muted);font-size:13.5px}
+.tabs button.on{color:var(--ink);border-bottom-color:var(--accent)}
+.tabs .n{font-size:11px;background:var(--warn-soft);color:var(--warn);border-radius:9px;padding:0 6px;margin-left:4px}
+#pane{flex:1;overflow-y:auto;padding:14px}
+h3{font-size:11.5px;text-transform:uppercase;letter-spacing:.7px;color:var(--muted);margin:16px 2px 8px;font-weight:600}
+h3:first-child{margin-top:2px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;margin-bottom:8px;overflow:hidden}
+.card.flash{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.card .top{display:flex;align-items:center;gap:8px;padding:9px 11px;cursor:pointer}
+.card .word{font-weight:600}
+.card .sense{font-size:11px;color:var(--muted);letter-spacing:.4px}
+.card .pos{font-size:12px;color:var(--muted);font-style:italic}
+.card .sp{flex:1}
+.lvl{font-size:10.5px;font-weight:700;color:#fff;border-radius:5px;padding:1px 5px}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--line);flex:none}
+.dot.ok{background:var(--ok)} .dot.bad{background:var(--bad)} .dot.ai{background:var(--mark)}
+.card .body{display:none;padding:0 11px 10px;font-size:13.5px}
+.card.open .body{display:block}
+.card .def{margin-bottom:6px}
+.card .ex{color:var(--muted);font-style:italic;margin:2px 0;padding-left:9px;border-left:2px solid var(--line)}
+.card .meta{font-size:12px;color:var(--muted);margin-top:6px}
+.card .meta b{color:var(--ink);font-weight:600}
+.card .acts{display:flex;gap:6px;margin-top:9px;flex-wrap:wrap}
+.card .acts button{font-size:12px;padding:3px 9px}
+.stage{display:inline-flex;gap:3px;vertical-align:middle;margin-left:4px}
+.stage i{width:9px;height:5px;border-radius:2px;background:var(--line)}
+.stage i.f{background:var(--accent)}
+.hint{font-size:12.5px;color:var(--muted);margin:4px 2px 10px}
+.fld{margin-bottom:15px}
+.fld label.t{display:block;font-weight:600;font-size:13px;margin-bottom:2px}
+.fld .d{font-size:12px;color:var(--muted);margin-bottom:6px}
+.chips{display:flex;flex-wrap:wrap;gap:5px}
+.chip{border:1px solid var(--line);background:var(--card);border-radius:14px;padding:2px 10px;font-size:12.5px;cursor:pointer;user-select:none}
+.chip.on{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
+input[type=range]{width:100%;accent-color:var(--accent)}
+.rangeval{float:right;font-weight:600;font-size:13px}
+.stat{display:grid;grid-template-columns:34px 1fr 78px;gap:8px;align-items:center;font-size:12.5px;margin-bottom:5px}
+.bar{height:8px;border-radius:4px;background:var(--line);overflow:hidden;display:flex}
+.bar i{display:block;height:100%}
+.filters{display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap}
+.filters input{flex:1;min-width:120px}
+dialog{border:1px solid var(--line);border-radius:14px;background:var(--panel);color:var(--ink);padding:22px;width:min(640px,92vw);max-height:92vh;overflow-y:auto}
+dialog::backdrop{background:rgba(0,0,0,.35)}
+dialog h2{margin:0 0 4px;font-size:18px}
+dialog textarea{width:100%;min-height:74px;margin-top:6px}
+.sugg{font-size:12.5px;color:var(--accent);cursor:pointer;margin:4px 10px 0 0;display:inline-block}
+.gp{font-size:13px}
+.gp .area{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px}
+dialog label.t{display:block;font-weight:600;font-size:13px;margin-top:12px}
+dialog .d{font-size:12px;color:var(--muted)}
+dialog input[type=text]{width:100%;margin-top:6px}
+dialog textarea.sm{min-height:46px}
+.recent{font-size:12.5px;margin-top:12px;color:var(--muted)}
+.snote{display:flex;gap:6px;align-items:flex-start;font-size:13px;padding:6px 9px;background:var(--card);border:1px solid var(--line);border-radius:8px;margin-bottom:5px}
+.snote span{flex:1}
+.snote.mine{border-left:3px solid var(--accent)}
+.snote button{padding:0 6px;font-size:14px;line-height:1.3}
+.setup textarea{width:100%;min-height:52px;resize:vertical;font-size:13.5px}
+#words{flex:1;overflow-y:auto;padding:22px 28px;display:none}
+body.words main{display:none} body.words #words{display:block}
+#words .in{max-width:1080px;margin:0 auto}
+#words h2{margin:0 0 4px;font-size:20px}
+.wbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:14px 0 10px}
+.wbar input{flex:1;min-width:160px}
+.wt{width:100%;border-collapse:collapse;font-size:14px;background:var(--card);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.wt th{font-size:11px;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);text-align:left;font-weight:600;padding:8px 10px;border-bottom:1px solid var(--line);cursor:pointer;white-space:nowrap;user-select:none}
+.wt td{padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+.wt tr.r{cursor:pointer}
+.wt tr.r:hover td{background:var(--accent-soft)}
+.wt tr:last-child td{border-bottom:0}
+.wt .num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.wt .def{color:var(--muted);font-size:13px}
+.wt tr.x td{background:var(--panel);padding:0 10px 10px}
+.wt tr.x .card{margin:8px 0 0;max-width:640px}
+.pill{font-size:11.5px;border-radius:10px;padding:1px 8px;white-space:nowrap;background:var(--line)}
+.pill.due{background:var(--warn-soft);color:var(--warn)} .pill.known{background:var(--accent-soft);color:var(--accent)}
+@media (max-width:900px){.wt .hidem{display:none}}
+@media (max-width:900px){main{flex-direction:column}aside{width:auto;border-left:0;border-top:1px solid var(--line);max-height:46vh}.notes{display:none}}
+</style>
+</head>
+<body>
+<header>
+  <h1>Langu-AI</h1>
+  <select id="sessions" title="Sessions"></select>
+  <span class="sp"></span>
+  <button id="wordsBtn">My words</button>
+  <button class="primary" id="newBtn">New session</button>
+</header>
+<main>
+  <section id="chat">
+    <div id="msgs"></div>
+    <div id="composer"><div id="vstat"></div><div class="in">
+      <textarea id="input" rows="1" placeholder="Write in English…"></textarea>
+      <button id="micBtn" title="Dictate your message. Click again to stop.">Speak</button>
+      <button id="talkBtn" title="Hands-free: you talk, the reply is read aloud, then it listens again.">Talk mode</button>
+      <button class="primary" id="sendBtn">Send</button>
+    </div></div>
+  </section>
+  <aside>
+    <div class="tabs" id="tabs"></div>
+    <div id="pane"></div>
+  </aside>
+</main>
+<section id="words"><div class="in" id="wordsIn"></div></section>
+
+<dialog id="dlg">
+  <h2>New session</h2>
+  <div class="hint">Pick what you feel like. The words to practise are chosen from your settings.</div>
+  <div class="chips" id="dlgModes"></div>
+  <div id="dlgFields"></div>
+  <div id="dlgSugg"></div>
+  <div class="recent" id="dlgRecent"></div>
+  <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:16px">
+    <button id="dlgCancel">Cancel</button><button class="primary" id="dlgStart">Start</button>
+  </div>
+</dialog>
+
+<script>
+const $ = s => document.querySelector(s);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const TOPICS = ['animals','arts and media','body and health','buildings','clothes','communication','crime','describing things','education','food and drink','money','natural world','people: actions','people: appearance','people: personality','politics','relationships','shopping','sport and games','technology','travel','work'];
+const MODE_LABEL = {chat:'Chat', roleplay:'Role-play', adventure:'Adventure', debate:'Debate'};
+const SUGG = {
+  chat:['Something I read this week','Plans I keep postponing','A film or series worth arguing about'],
+  roleplay:['Job interview at a small design studio','Returning a faulty laptop to a stubborn shop assistant','Negotiating rent with a landlord'],
+  adventure:['A lighthouse keeper finds a message in a bottle','A detective story in 1920s Istanbul','Stranded on a research station in Antarctica'],
+  debate:['Remote work is better than office work','Cities should ban private cars','Social media does more harm than good']};
+const SETUP = {
+  roleplay:[['you','Who you play','Name, who they are, what they want. e.g. Kaan, a tired architect who wants his deposit back'],
+            ['partner','Who the AI plays','One or more characters. e.g. Mrs. Doyle, a charming landlady who never admits fault'],
+            ['story','Setting and story','Where and when, what has happened so far, where the scene starts'],
+            ['tone','Tone and style','e.g. dry humor, tense, slow-burn, lots of dialogue, swearing is fine'],
+            ['rules','Rules and wishes','Anything that must or must not happen. e.g. never decide what my character does']],
+  adventure:[['you','Your character','Name, who they are, what they are good and bad at'],
+             ['partner','Other characters','People the narrator should play: names, relationships to you, secrets'],
+             ['story','Setting and story','The world, the premise, where it starts, where you would like it to go'],
+             ['tone','Tone and style','e.g. noir, cozy, realistic, fast-paced, long descriptions or short ones'],
+             ['rules','Rules and wishes','e.g. no magic, the mystery must be solvable, do not rush the ending']],
+  debate:[['you','Your side','What you will argue'],
+          ['rules','Rules and wishes','e.g. be tough on me, ask for evidence, keep it short']],
+  chat:[['partner','Who you are talking to','Optional. e.g. a friend who loves football, a skeptical colleague'],
+        ['rules','Wishes','e.g. ask me about my week, keep it light']]};
+const TOPIC_LABEL = {chat:'What to talk about', roleplay:'The scene in one line', adventure:'The story in one line', debate:'The motion'};
+const INTENSITY = ['','Barely there','Light','Balanced','Strong','Drill'];
+
+let S = null, cur = null, tab = 'words', open = new Set(), lastChatKey = '', lastPaneKey = '', dlgMode = 'chat';
+let browse = {q:'', status:'learning', level:'', items:null}, statsData = null, timer = null;
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition, TTS = 'speechSynthesis' in window;
+const V = Object.assign({speak:false, voice:'', rate:0.95, pause:2.5, talk:false, rec:null, want:false, spoken:false, key:null, off:0, last:0, msg:''},
+  (() => { try{ return JSON.parse(localStorage.getItem('dilai_voice')) || {}; }catch(e){ return {}; } })());
+let mw = {items:null, f:'practising', q:'', level:'', kind:'', sort:'seen', dir:-1, open:new Set()};
+
+async function api(path, body){
+  const r = await fetch(path, body ? {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)} : undefined);
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(j.error || r.statusText);
+  return j;
+}
+
+async function refresh(){
+  clearTimeout(timer);
+  try{
+    S = await api('/api/state' + (cur ? '?session=' + cur : ''));
+    if (S.session) cur = S.session.id;
+    render();
+  }catch(e){ /* server restarting */ }
+  timer = setTimeout(refresh, S && S.session && S.session.busy ? 600 : 2500);
+}
+
+/* ---------- chat ---------- */
+function patterns(items){
+  const out = [];
+  for (const it of items){
+    if (['known','skipped'].includes(it.session_state)) continue;
+    for (const f of (it.forms && it.forms.length ? it.forms : [it.word.toLowerCase()])){
+      if (/[()\/]/.test(f) || f.length < 2) continue;
+      const ws = f.split(/\s+/).map(w => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+      let src;
+      if (ws.length === 1) src = ws[0];
+      else { ws[0] = ws[0].replace(/e$/, '') + "[a-z']{0,4}"; src = ws.join("\\s+(?:[\\w']+\\s+){0,2}?"); }
+      out.push({re: new RegExp('(?<![\\w])' + src + '(?![\\w])', 'gi'), id: it.id, len: f.length});
+    }
+  }
+  return out.sort((a, b) => b.len - a.len);
+}
+function markup(text, pats){
+  const spans = [];
+  for (const p of pats){
+    p.re.lastIndex = 0; let m;
+    while ((m = p.re.exec(text))){
+      const a = m.index, b = a + m[0].length;
+      if (!spans.some(s => a < s.b && b > s.a)) spans.push({a, b, id: p.id});
+      if (m[0].length === 0) p.re.lastIndex++;
+    }
+  }
+  spans.sort((x, y) => x.a - y.a);
+  let out = '', i = 0;
+  for (const s of spans){ out += esc(text.slice(i, s.a)) + '<span class="w" data-id="' + s.id + '">' + esc(text.slice(s.a, s.b)) + '</span>'; i = s.b; }
+  return out + esc(text.slice(i));
+}
+function noteHtml(f){
+  return '<div class="note ' + (f.severity === 'minor' ? 'minor' : '') + '" title="Click for the reason">' +
+    (f.category && f.category !== 'other' ? '<span class="cat">' + esc(f.category) + '</span>' : '') +
+    '<s>' + esc(f.original) + '</s> → <b>' + esc(f.corrected) + '</b><div class="why">' + esc(f.explanation) + '</div></div>';
+}
+function renderChat(){
+  const box = $('#msgs'), ses = S.session;
+  if (!ses){
+    box.innerHTML = '<div class="empty"><h2>Practise English by using it</h2><p>Start a session: a chat, a role-play, an adventure or a debate. Words worth learning turn up in the conversation; look them up in the panel whenever you like.</p><p><button class="primary" onclick="openDlg()">New session</button></p></div>';
+    $('#composer').style.display = 'none'; return;
+  }
+  const key = JSON.stringify([ses.id, ses.messages.length, ses.messages.reduce((n, m) => n + m.feedback.length, 0), ses.partial, ses.activity, ses.error, ses.loose_feedback.length, ses.items.map(i => i.id + i.session_state).join()]);
+  const desktop = ses.source === 'desktop';
+  $('#composer').style.display = desktop ? 'none' : '';
+  $('#sendBtn').disabled = ses.busy;
+  if (key === lastChatKey) return;
+  lastChatKey = key;
+  const stick = box.scrollHeight - box.scrollTop - box.clientHeight < 140;
+  const pats = patterns(ses.items);
+  let h = '';
+  if (desktop){
+    h += '<div class="empty" style="margin-top:3vh"><h2>This session runs in Claude Desktop</h2><p>Keep this window beside the chat. Words from the conversation appear on the right; corrections appear below.</p></div>';
+    for (const f of ses.loose_feedback) h += '<div class="row user"><div class="notes" style="max-width:520px;flex-basis:520px">' + noteHtml(f).replace('class="note', 'class="note open') + '</div></div>';
+  }
+  for (const m of ses.messages){
+    if (m.role === 'user') h += '<div class="row user"><div class="notes">' + m.feedback.map(noteHtml).join('') + '</div><div class="bubble">' + esc(m.text) + '</div></div>';
+    else h += '<div class="row ai"><div class="bubble">' + markup(m.text, pats) + '</div>' + (TTS ? '<span class="say" data-saymsg="' + m.id + '">Listen</span>' : '') + '</div>';
+  }
+  if (ses.partial) h += '<div class="row ai"><div class="bubble">' + markup(ses.partial, pats) + '</div></div>';
+  if (ses.busy && !ses.partial) h += '<div class="typing">' + (ses.activity === 'noting' ? 'reading what you wrote…' : 'thinking…') + '</div>';
+  if (ses.error) h += '<div class="err">' + esc(ses.error) + '</div>';
+  box.innerHTML = h;
+  if (stick) box.scrollTop = box.scrollHeight;
+}
+$('#msgs').addEventListener('click', e => {
+  const w = e.target.closest('.w'); if (w) return showCard(+w.dataset.id);
+  const n = e.target.closest('.note'); if (n) n.classList.toggle('open');
+  const sm = e.target.closest('[data-saymsg]');
+  if (sm){ const m = S.session.messages.find(x => x.id === +sm.dataset.saymsg); if (m){ speechSynthesis.cancel(); sayText(m.text); } }
+});
+function showCard(id){
+  tab = 'words'; open.add(id); lastPaneKey = ''; render();
+  const el = document.querySelector('.card[data-id="' + id + '"]');
+  if (el){ el.scrollIntoView({block:'center', behavior:'smooth'}); el.classList.add('flash'); setTimeout(() => el.classList.remove('flash'), 1400); }
+  api('/api/item', {session:cur, id, action:'lookup'}).catch(() => {});
+}
+async function send(){
+  const t = $('#input').value.trim();
+  if (!t || !S.session || S.session.busy) return;
+  $('#input').value = ''; autosize();
+  const spoken = V.spoken; V.spoken = false; listen(false);
+  S.session.busy = true;
+  if (TTS) speechSynthesis.cancel();
+  try{ await api('/api/send', {session:cur, text:t, spoken}); }catch(e){ alert(e.message); $('#input').value = t; }
+  refresh();
+}
+function autosize(){ const a = $('#input'); a.style.height = 'auto'; a.style.height = Math.min(180, a.scrollHeight) + 'px'; }
+$('#input').addEventListener('input', () => { autosize(); if (!$('#input').value.trim()) V.spoken = false; });
+$('#input').addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey && !e.isComposing){ e.preventDefault(); send(); } });
+$('#sendBtn').onclick = send;
+
+/* ---------- cards ---------- */
+function stageDots(n){ let h = '<span class="stage" title="Practice stage ' + n + ' of 5">'; for (let i = 1; i <= 5; i++) h += '<i class="' + (i <= n ? 'f' : '') + '"></i>'; return h + '</span>'; }
+function cardHtml(it, inSession){
+  const st = it.session_state;
+  let dot = '<span class="dot" title="Not used yet"></span>';
+  if (st === 'used_ok') dot = '<span class="dot ok" title="You used it correctly"></span>';
+  else if (st === 'used_wrong') dot = '<span class="dot bad" title="Used, but not quite right"></span>';
+  else if (inSession && it.ai_used) dot = '<span class="dot ai" title="It has come up in the conversation"></span>';
+  let b = '<div class="def">' + esc(it.definition) + '</div>';
+  for (const ex of (it.examples || []).slice(0, 3)) b += '<div class="ex">' + esc(ex) + '</div>';
+  const meta = [];
+  if (it.grammar) meta.push(esc(it.grammar));
+  if (it.usage) meta.push(esc(it.usage));
+  if (it.pron) meta.push('/' + esc(it.pron) + '/');
+  if (it.topics) meta.push(esc(it.topics));
+  if (meta.length) b += '<div class="meta">' + meta.join(' · ') + '</div>';
+  if (it.synonyms) b += '<div class="meta"><b>Similar:</b> ' + esc(it.synonyms) + '</div>';
+  if (it.tip) b += '<div class="meta"><b>Tip:</b> ' + esc(it.tip) + '</div>';
+  if (it.translation) b += '<div class="meta"><b>Translation:</b> ' + esc(it.translation) + '</div>';
+  const label = {known:'known', learning:'practising', unknown:"don't know yet", ignored:'ignored', new:'new', assumed_known:'assumed known'}[it.status] || it.status;
+  b += '<div class="meta">' + label + ' · used correctly <b>' + (it.used_correctly || 0) + '</b>, incorrectly <b>' + (it.used_incorrectly || 0) + '</b>' + stageDots(it.stage || 0) + '</div>';
+  b += '<div class="acts">';
+  if (it.status !== 'known') b += '<button data-act="known">I know this</button>';
+  if (it.status !== 'unknown' && it.status !== 'known') b += '<button data-act="unknown">Don\'t know it</button>';
+  if (it.status === 'known' || it.status === 'ignored') b += '<button data-act="learning">Practise it</button>';
+  if (inSession && !['skipped','known'].includes(st)) b += '<button data-act="skip">Not now</button>';
+  if (!inSession && cur) b += '<button data-act="target">Add to this session</button>';
+  if (TTS) b += '<button data-saytext="' + esc(it.word.replace(/\b(sb|sth|swh)\b/g, m => ({sb:'somebody', sth:'something', swh:'somewhere'}[m])).replace(/[()\/]/g, ' ')) + '">Listen</button>';
+  if (inSession && st === 'skipped') b += '<button data-act="target">Bring back</button>';
+  b += '</div>';
+  return '<div class="card ' + (open.has(it.id) ? 'open' : '') + '" data-id="' + it.id + '"><div class="top">' + dot +
+    '<span class="word">' + esc(it.word) + '</span>' + (it.sense ? '<span class="sense">' + esc(it.sense) + '</span>' : '') +
+    '<span class="sp"></span><span class="pos">' + esc(it.pos || '') + '</span>' +
+    (it.level ? '<span class="lvl" style="background:var(--' + it.level + ')">' + it.level + '</span>' : '') +
+    '</div><div class="body">' + b + '</div></div>';
+}
+$('#pane').addEventListener('click', async e => {
+  const act = e.target.closest('[data-act]'), card = e.target.closest('.card');
+  if (act && card){
+    await api('/api/item', {session:cur, id:+card.dataset.id, action:act.dataset.act}).catch(x => alert(x.message));
+    browse.items = null; lastPaneKey = ''; return refresh();
+  }
+  const top = e.target.closest('.card .top');
+  if (top){ const id = +card.dataset.id; if (open.has(id)) open.delete(id); else { open.add(id); api('/api/item', {session:cur, id, action:'lookup'}).catch(() => {}); } card.classList.toggle('open'); return; }
+  const more = e.target.closest('[data-more]');
+  if (more){ await api('/api/more', {session:cur, strategy:more.dataset.more, count:3}).catch(x => alert(x.message)); return refresh(); }
+  const t = e.target.closest('.note'); if (t) t.classList.toggle('open');
+  const dn = e.target.closest('[data-delnote]');
+  if (dn){ await api('/api/note', {session:cur, delete:+dn.dataset.delnote}).catch(x => alert(x.message)); return refresh(); }
+  if (e.target.id === 'noteAdd'){ const v = $('#noteNew').value.trim(); if (v){ await api('/api/note', {session:cur, text:v}).catch(x => alert(x.message)); $('#noteNew').blur(); lastPaneKey = ''; return refresh(); } }
+  if (e.target.id === 'setupSave'){
+    const setup = {}; document.querySelectorAll('[data-setup]').forEach(a => setup[a.dataset.setup] = a.value);
+    await api('/api/setup', {session:cur, setup}).catch(x => alert(x.message));
+    e.target.textContent = 'Saved'; document.activeElement.blur(); lastPaneKey = ''; return refresh();
+  }
+});
+$('#pane').addEventListener('keydown', e => { if (e.target.id === 'noteNew' && e.key === 'Enter') $('#noteAdd').click(); });
+
+/* ---------- side panel ---------- */
+function renderTabs(){
+  const nfb = S.session ? S.session.messages.reduce((n, m) => n + m.feedback.length, 0) + S.session.loose_feedback.length : 0;
+  const tabs = [['words','Words'],['feedback','Feedback' + (nfb ? '<span class="n">' + nfb + '</span>' : '')],['story','Story'],['grammar','Grammar'],['progress','Progress'],['settings','Settings']];
+  $('#tabs').innerHTML = tabs.map(([k, l]) => '<button class="' + (tab === k ? 'on' : '') + '" data-tab="' + k + '">' + l + '</button>').join('');
+}
+$('#tabs').addEventListener('click', e => { const b = e.target.closest('[data-tab]'); if (b){ tab = b.dataset.tab; lastPaneKey = ''; if (tab === 'progress'){ statsData = null; browse.items = null; } render(); } });
+
+function renderPane(){
+  const ses = S.session, pane = $('#pane');
+  if (tab === 'words'){
+    const key = 'w' + JSON.stringify(ses ? ses.items : 0);
+    if (key === lastPaneKey) return; lastPaneKey = key;
+    if (!ses){ pane.innerHTML = '<div class="hint">Start a session to see its words here.</div>'; return; }
+    const act = ses.items.filter(i => i.role === 'target' && !['skipped','known'].includes(i.session_state));
+    const exp = ses.items.filter(i => i.role === 'exposed' && !['skipped','known'].includes(i.session_state));
+    const spo = ses.items.filter(i => i.role === 'spontaneous');
+    const off = ses.items.filter(i => i.role !== 'spontaneous' && ['skipped','known'].includes(i.session_state));
+    let h = '<h3>Words for this session</h3><div class="hint">Click a word to see what it means. Try to use them when the moment comes.</div>';
+    h += act.map(i => cardHtml(i, true)).join('') || '<div class="hint">None left.</div>';
+    h += '<div style="display:flex;gap:6px;margin:4px 0 6px"><button data-more="new">+ 3 new</button><button data-more="review">+ 3 to review</button></div>';
+    if (exp.length) h += '<h3>Also came up</h3>' + exp.map(i => cardHtml(i, true)).join('');
+    if (spo.length) h += '<h3>You used</h3>' + spo.map(i => cardHtml(i, true)).join('');
+    if (off.length) h += '<h3>Set aside</h3>' + off.map(i => cardHtml(i, true)).join('');
+    pane.innerHTML = h;
+  } else if (tab === 'feedback'){
+    const all = ses ? ses.loose_feedback.concat(...ses.messages.map(m => m.feedback)) : [];
+    const key = 'f' + all.length; if (key === lastPaneKey) return; lastPaneKey = key;
+    pane.innerHTML = '<h3>Corrections in this session</h3>' + (all.length ? all.slice().reverse().map(f => noteHtml(f).replace('class="note', 'class="note open').replace('<div class="note', '<div style="margin-bottom:8px" class="note')).join('') : '<div class="hint">Nothing so far.</div>');
+  } else if (tab === 'story'){
+    const key = 'y' + JSON.stringify(ses ? [ses.id, ses.setup, ses.notes] : 0); if (key === lastPaneKey) return;
+    if (pane.contains(document.activeElement) && /TEXTAREA|INPUT/.test(document.activeElement.tagName)) return;
+    lastPaneKey = key;
+    if (!ses){ pane.innerHTML = '<div class="hint">Start a session to set up its story.</div>'; return; }
+    const fields = SETUP[ses.mode] || SETUP.roleplay;
+    let h = '<h3>Setup</h3><div class="hint">Yours to write and change at any time. The AI must keep to it.</div><div class="setup">';
+    for (const [k, l, ph] of fields) h += '<div class="fld"><label class="t">' + l + '</label><textarea data-setup="' + k + '" placeholder="' + esc(ph) + '">' + esc(ses.setup[k] || '') + '</textarea></div>';
+    for (const k of S.setup_fields) if (ses.setup[k] && !fields.some(f => f[0] === k)) h += '<div class="fld"><label class="t">' + k + '</label><textarea data-setup="' + k + '">' + esc(ses.setup[k]) + '</textarea></div>';
+    h += '<button id="setupSave">Save setup</button></div>';
+    h += '<h3>Story so far</h3><div class="hint">Facts the AI is keeping track of. Remove one that is wrong, or add your own; the AI is told straight away.</div>';
+    h += ses.notes.map(n => '<div class="snote ' + (n.source === 'user' ? 'mine' : '') + '"><span>' + esc(n.text) + '</span><button class="ghost" data-delnote="' + n.id + '" title="Not true / remove">×</button></div>').join('') || '<div class="hint">Nothing noted yet.</div>';
+    h += '<div style="display:flex;gap:6px;margin-top:8px"><input type="text" id="noteNew" style="flex:1" placeholder="Add a fact, e.g. Vic is my wife"><button id="noteAdd">Add</button></div>';
+    h += '<div class="hint" style="margin-top:14px">In the chat, write <b>((like this))</b> to speak to the AI outside the story: “((she never saw that message))”, “((slow down, more dialogue))”.</div>';
+    pane.innerHTML = h;
+  } else if (tab === 'grammar'){
+    const key = 'g' + JSON.stringify(ses ? ses.grammar : 0); if (key === lastPaneKey) return; lastPaneKey = key;
+    let h = '<h3>Grammar in focus</h3><div class="hint">From the Cambridge English Grammar Profile. The conversation will give you chances to use these.</div>';
+    h += (ses && ses.grammar.length) ? ses.grammar.map(g => '<div class="card open"><div class="body gp" style="padding-top:10px"><div class="area">' + esc(g.area) + ' <span class="lvl" style="background:var(--' + g.level + ')">' + g.level + '</span></div><div style="font-weight:600;margin:3px 0">' + esc(g.point || '') + '</div><div>' + esc(g.can_do) + '</div>' + (g.example ? '<div class="ex" style="margin-top:6px">' + esc(g.example) + '</div>' : '') + (g.used_correctly != null ? '<div class="meta">right <b>' + g.used_correctly + '</b>, wrong <b>' + g.used_incorrectly + '</b></div>' : '') + '</div></div>').join('') : '<div class="hint">No grammar points in this session.</div>';
+    pane.innerHTML = h;
+  } else if (tab === 'progress'){
+    renderProgress();
+  } else if (tab === 'settings'){
+    const key = 's' + JSON.stringify([S.settings, V.speak, V.voice, V.rate, V.pause, voices().length]); if (key === lastPaneKey) return; lastPaneKey = key;
+    renderSettings();
+  }
+}
+
+async function renderProgress(){
+  const pane = $('#pane');
+  if (!statsData){ statsData = await api('/api/stats'); }
+  if (!browse.items){ const q = new URLSearchParams({q:browse.q, status:browse.status, level:browse.level}); browse.items = (await api('/api/vocab?' + q)).items; lastPaneKey = ''; }
+  const key = 'p' + JSON.stringify([statsData, browse]); if (key === lastPaneKey || tab !== 'progress') return; lastPaneKey = key;
+  const st = statsData; let h = '<h3>Vocabulary by level</h3>';
+  const assumed = S.levels.indexOf(st.assumed_known_through);
+  S.levels.forEach((L, i) => {
+    const tot = st.profile_size_by_level[L] || 0, t = st.tracked_by_level[L] || {};
+    const pct = n => tot ? (100 * n / tot) + '%' : 0;
+    const known = i <= assumed ? tot - (t.learning || 0) - (t.unknown || 0) : (t.known || 0);
+    h += '<div class="stat"><span class="lvl" style="background:var(--' + L + ');text-align:center">' + L + '</span><div class="bar"><i style="width:' + pct(known) + ';background:var(--ok)"></i><i style="width:' + pct((t.learning || 0) + (t.unknown || 0)) + ';background:var(--mark)"></i></div><span>' + known + ' / ' + tot + '</span></div>';
+  });
+  h += '<div class="hint">Green: known (marked, earned, or assumed from your level). Amber: in practice. ' + st.due_for_review + ' due for review.</div>';
+  if (st.weak_grammar.length) h += '<h3>Grammar to watch</h3>' + st.weak_grammar.map(g => '<div class="hint" style="color:var(--ink)">' + esc(g.point || g.area) + ' <span style="color:var(--muted)">(' + g.level + ', wrong ' + g.used_incorrectly + '×)</span></div>').join('');
+  h += '<h3>Browse the profile</h3><div class="filters"><input type="text" id="bq" placeholder="Search a word…" value="' + esc(browse.q) + '"><select id="bs">' +
+    [['learning','Practising'],['due','Due for review'],['unknown',"Don't know"],['known','Known'],['ignored','Ignored'],['new','Not met yet'],['','Everything']].map(([v, l]) => '<option value="' + v + '"' + (browse.status === v ? ' selected' : '') + '>' + l + '</option>').join('') +
+    '</select><select id="bl"><option value="">Any level</option>' + S.levels.map(L => '<option' + (browse.level === L ? ' selected' : '') + '>' + L + '</option>').join('') + '</select></div>';
+  h += browse.items.map(i => cardHtml(i, false)).join('') || '<div class="hint">Nothing here yet.</div>';
+  pane.innerHTML = h;
+  const again = () => { browse.q = $('#bq').value; browse.status = $('#bs').value; browse.level = $('#bl').value; browse.items = null; renderProgress(); };
+  $('#bq').onchange = again; $('#bs').onchange = again; $('#bl').onchange = again;
+}
+
+function renderSettings(){
+  const s = S.settings, L = S.levels;
+  const opt = (vals, v, lab) => vals.map(x => '<option value="' + x + '"' + (x === v ? ' selected' : '') + '>' + (lab ? lab(x) : x) + '</option>').join('');
+  const chips = (key, vals, on) => '<div class="chips" data-multi="' + key + '">' + vals.map(v => '<span class="chip ' + (on.includes(v) ? 'on' : '') + '" data-v="' + esc(v) + '">' + esc(v) + '</span>').join('') + '</div>';
+  const seg = (key, vals, v, lab) => '<div class="chips" data-one="' + key + '">' + vals.map(x => '<span class="chip ' + (x === v ? 'on' : '') + '" data-v="' + x + '">' + lab[x] + '</span>').join('') + '</div>';
+  const range = (key, min, max, v, text) => '<span class="rangeval" id="rv_' + key + '">' + text(v) + '</span><input type="range" data-range="' + key + '" min="' + min + '" max="' + max + '" value="' + v + '">';
+  const f = (title, desc, ctl) => '<div class="fld"><label class="t">' + title + '</label>' + (desc ? '<div class="d">' + desc + '</div>' : '') + ctl + '</div>';
+  let h = '<h3>You</h3>';
+  h += f('My level', '', '<select data-sel="level">' + opt(L, s.level) + '</select>');
+  h += f('I already know everything up to', 'Words at these levels are never proposed, unless you get one wrong or mark it yourself.', '<select data-sel="assume_known_through"><option value="">nothing</option>' + opt(L, s.assume_known_through) + '</select>');
+  h += f('English', '', seg('variant', ['us','uk'], s.variant, {us:'American', uk:'British'}));
+  h += f('My first language', 'Optional. Adds a translation to word notes.', '<input type="text" data-text="native_language" value="' + esc(s.native_language) + '" placeholder="e.g. Turkish">');
+  h += '<h3>What to bring</h3>';
+  h += f('New words come from', '', chips('target_levels', L, s.target_levels));
+  h += f('Kinds', '', chips('kinds', S.kinds, s.kinds));
+  h += f('Topics', 'None selected means any topic.', chips('topics', TOPICS, s.topics));
+  h += f('New items per session', '', range('new_per_session', 0, 15, s.new_per_session, v => v));
+  h += f('Review items per session', 'Items you met before and are due to meet again.', range('review_per_session', 0, 15, s.review_per_session, v => v));
+  h += f('Grammar points per session', '', range('grammar_per_session', 0, 6, s.grammar_per_session, v => v));
+  h += '<h3>How it feels</h3>';
+  h += f('Intensity', 'How hard the conversation pushes the session words at you.', range('intensity', 1, 5, s.intensity, v => INTENSITY[v]));
+  h += f('Corrections', 'Shown as small notes beside your message, never inside the conversation.', seg('feedback', ['off','important','all'], s.feedback, {off:'Off', important:'Only what matters', all:'Everything'}));
+  h += f('The AI writes', '', seg('ai_level', ['simpler','match','stretch'], s.ai_level, {simpler:'A bit below my level', match:'At my level', stretch:'A bit above'}));
+  h += f('Counts as known after', 'Correct uses only count once a day, and only when the word was due again. Higher means more proof over a longer time.', range('known_stage', 2, 5, s.known_stage, v => ({2:'2 spaced uses (days)', 3:'3 spaced uses (about a week)', 4:'4 spaced uses (weeks)', 5:'5 spaced uses (a month+)'}[v])));
+  h += '<h3>Other</h3>';
+  h += f('Model for the chat', 'Opus keeps a story straight best. Sonnet and Haiku answer faster but lose the thread more easily.', '<select data-sel="model">' + opt(S.models, s.model, x => x[0].toUpperCase() + x.slice(1)) + '</select>');
+  h += f('Thinking before each reply', 'More thinking means fewer slips in logic and memory, and a longer wait.', seg('effort', S.efforts, s.effort, {low:'Quick', medium:'Careful', high:'Very careful'}));
+  h += f('', '', '<label><input type="checkbox" data-check="hide_sensitive"' + (s.hide_sensitive ? ' checked' : '') + '> Hide culturally sensitive words</label>');
+  h += '<h3>Voice</h3>';
+  if (!TTS && !SR) h += '<div class="hint">This browser has no speech support. Open the app in Chrome or Safari.</div>';
+  if (TTS){
+    const vs = voices();
+    h += f('', '', '<label><input type="checkbox" data-v="speak"' + (V.speak ? ' checked' : '') + '> Read replies aloud</label>');
+    h += f('Voice', 'Voices installed on this Mac. More (including better-sounding ones) can be added in System Settings → Accessibility → Spoken Content.', '<select data-v="voice"><option value="">Automatic</option>' + vs.map(v => '<option value="' + esc(v.name) + '"' + (v.name === V.voice ? ' selected' : '') + '>' + esc(v.name) + ' (' + v.lang + ')</option>').join('') + '</select> <button id="voiceTest">Test</button>');
+    h += f('Speaking speed', '', '<span class="rangeval">' + V.rate.toFixed(2) + '×</span><input type="range" data-v="rate" min="0.6" max="1.4" step="0.05" value="' + V.rate + '">');
+  }
+  if (SR) h += f('Talk mode sends after a pause of', 'How long you can stop to think before your message is sent.', '<span class="rangeval">' + V.pause.toFixed(1) + ' s</span><input type="range" data-v="pause" min="1" max="6" step="0.5" value="' + V.pause + '">');
+  else if (TTS) h += '<div class="hint">Speaking into the microphone needs Chrome or Safari.</div>';
+  $('#pane').innerHTML = h;
+}
+async function saveSetting(k, v){ try{ S.settings = (await api('/api/settings', {changes:{[k]:v}})).settings; }catch(e){ alert(e.message); } lastPaneKey = ''; renderPane(); }
+$('#pane').addEventListener('change', e => {
+  const t = e.target;
+  if (t.dataset.setup || t.id === 'noteNew') return;
+  if (t.dataset.v){ V[t.dataset.v] = t.type === 'checkbox' ? t.checked : t.type === 'range' ? +t.value : t.value; saveVoice(); if (!V.speak && TTS) speechSynthesis.cancel(); lastPaneKey = ''; return renderPane(); }
+  if (t.dataset.sel) saveSetting(t.dataset.sel, t.value);
+  else if (t.dataset.text) saveSetting(t.dataset.text, t.value);
+  else if (t.dataset.check) saveSetting(t.dataset.check, t.checked);
+  else if (t.dataset.range) saveSetting(t.dataset.range, +t.value);
+});
+$('#pane').addEventListener('click', e => {
+  const c = e.target.closest('.chip'); if (!c) return;
+  const multi = c.closest('[data-multi]'), one = c.closest('[data-one]');
+  if (one) saveSetting(one.dataset.one, c.dataset.v);
+  else if (multi){
+    c.classList.toggle('on');
+    const vals = [...multi.querySelectorAll('.chip.on')].map(x => x.dataset.v);
+    if (!vals.length && multi.dataset.multi !== 'topics'){ c.classList.add('on'); return; }
+    saveSetting(multi.dataset.multi, vals);
+  }
+});
+
+/* ---------- sessions ---------- */
+function renderSessions(){
+  const sel = $('#sessions');
+  const key = JSON.stringify(S.sessions.map(s => [s.id, s.title])) + cur;
+  if (sel.dataset.key === key) return; sel.dataset.key = key;
+  sel.innerHTML = S.sessions.length ? S.sessions.map(s => '<option value="' + s.id + '"' + (s.id === cur ? ' selected' : '') + '>' + esc(s.title) + ' · ' + esc((s.started || '').slice(5, 16)) + (s.source === 'desktop' ? ' · Claude Desktop' : '') + '</option>').join('') : '<option>No sessions yet</option>';
+}
+$('#sessions').onchange = e => { cur = +e.target.value; lastChatKey = lastPaneKey = ''; open.clear(); refresh(); };
+
+function openDlg(){
+  dlgMode = S.settings.mode || 'chat'; dlgVals = {}; drawDlg(); $('#dlg').showModal();
+}
+let dlgVals = {};
+function keepDlg(){ document.querySelectorAll('#dlgFields [data-k]').forEach(a => dlgVals[a.dataset.k] = a.value); }
+function drawDlg(){
+  $('#dlgModes').innerHTML = S.modes.map(m => '<span class="chip ' + (m === dlgMode ? 'on' : '') + '" data-m="' + m + '">' + MODE_LABEL[m] + '</span>').join('');
+  const v = k => esc(dlgVals[k] || '');
+  let h = '<label class="t">' + TOPIC_LABEL[dlgMode] + '</label><input type="text" data-k="scenario" value="' + v('scenario') + '" placeholder="Optional">';
+  for (const [k, l, ph] of SETUP[dlgMode]) h += '<label class="t">' + l + '</label><textarea class="sm" data-k="' + k + '" placeholder="' + esc(ph) + '">' + v(k) + '</textarea>';
+  h += '<div class="d" style="margin-top:8px">Everything is optional. Leave a box empty and the AI makes it up. You can change the setup later in the Story tab.</div>';
+  $('#dlgFields').innerHTML = h;
+  $('#dlgSugg').innerHTML = SUGG[dlgMode].map(x => '<span class="sugg">' + esc(x) + '</span>').join('');
+  const rec = S.sessions.filter(x => x.mode === dlgMode && (x.scenario || Object.keys(x.setup).length)).slice(0, 4);
+  $('#dlgRecent').innerHTML = rec.length ? 'Reuse an earlier setup: ' + rec.map(x => '<span class="sugg" data-reuse="' + x.id + '">' + esc(x.title.replace(/^[^:]+: /, '').slice(0, 40)) + '</span>').join('') : '';
+}
+$('#dlgModes').onclick = e => { const c = e.target.closest('[data-m]'); if (c){ keepDlg(); dlgMode = c.dataset.m; drawDlg(); } };
+$('#dlgSugg').onclick = e => { if (e.target.classList.contains('sugg')){ keepDlg(); dlgVals.scenario = e.target.textContent; drawDlg(); } };
+$('#dlgRecent').onclick = e => { const r = e.target.closest('[data-reuse]'); if (!r) return; const x = S.sessions.find(q => q.id === +r.dataset.reuse); if (x){ dlgVals = Object.assign({scenario: x.scenario || ''}, x.setup); drawDlg(); } };
+$('#dlgCancel').onclick = () => $('#dlg').close();
+$('#dlgStart').onclick = async () => {
+  $('#dlgStart').disabled = true; keepDlg();
+  const setup = {}; for (const [k] of SETUP[dlgMode]) if ((dlgVals[k] || '').trim()) setup[k] = dlgVals[k].trim();
+  try{ const r = await api('/api/session', {mode:dlgMode, scenario:(dlgVals.scenario || '').trim(), setup}); cur = r.session; open.clear(); lastChatKey = lastPaneKey = ''; $('#dlg').close(); showWords(false); if (Object.keys(setup).length) tab = 'story'; }
+  catch(e){ alert(e.message); }
+  $('#dlgStart').disabled = false; refresh();
+};
+
+/* ---------- my words page ---------- */
+const WF = [['practising','Practising'],['due','Due now'],['unknown',"Don't know"],['weak','Got wrong'],['known','Known'],['ignored','Ignored'],['all','All']];
+const wmatch = {practising:i => i.status === 'learning' || i.status === 'unknown', due:i => i.due, unknown:i => i.status === 'unknown',
+  weak:i => i.used_incorrectly > 0 && i.status !== 'known', known:i => i.status === 'known', ignored:i => i.status === 'ignored', all:() => true};
+async function showWords(on){
+  document.body.classList.toggle('words', on);
+  $('#wordsBtn').textContent = on ? 'Back to chat' : 'My words';
+  if (on){ mw.items = (await api('/api/mywords')).items; renderWords(); }
+}
+$('#wordsBtn').onclick = () => showWords(!document.body.classList.contains('words'));
+function ago(ts){
+  if (!ts) return '—';
+  const d = Math.floor((Date.now() - new Date(ts.replace(' ', 'T'))) / 864e5);
+  return d <= 0 ? 'today' : d === 1 ? 'yesterday' : d < 30 ? d + ' days ago' : ts.slice(0, 10);
+}
+function dueText(i){
+  if (i.status === 'known') return '<span class="pill known">known</span>';
+  if (i.status === 'ignored') return '<span class="pill">ignored</span>';
+  if (i.due) return '<span class="pill due">' + (i.status === 'unknown' ? "don't know" : 'due') + '</span>';
+  const d = Math.ceil((new Date(i.due_at.replace(' ', 'T')) - Date.now()) / 864e5);
+  return '<span class="pill">in ' + d + (d === 1 ? ' day' : ' days') + '</span>';
+}
+function renderWords(){
+  if (!mw.items) return;
+  const all = mw.items, q = mw.q.trim().toLowerCase();
+  let rows = all.filter(wmatch[mw.f]).filter(i => (!mw.level || i.level === mw.level) && (!mw.kind || i.kind === mw.kind) &&
+    (!q || i.word.toLowerCase().includes(q) || (i.definition || '').toLowerCase().includes(q) || (i.forms || []).includes(q)));
+  const val = {word:i => i.word.toLowerCase(), level:i => i.level || '', stage:i => i.stage, ok:i => i.used_correctly, bad:i => i.used_incorrectly,
+    met:i => i.exposures, used:i => i.last_used || '', seen:i => i.last_seen || '', due:i => i.status === 'known' ? '9' : i.status === 'ignored' ? '99' : (i.due ? '0' : i.due_at || '')}[mw.sort];
+  rows.sort((a, b) => (val(a) < val(b) ? -1 : val(a) > val(b) ? 1 : 0) * mw.dir);
+  const th = (k, l, cls) => '<th data-sort="' + k + '" class="' + (cls || '') + '">' + l + (mw.sort === k ? (mw.dir > 0 ? ' ↑' : ' ↓') : '') + '</th>';
+  let h = '<h2>My words</h2><div class="hint" style="margin:0">Every word, phrase and idiom you have met here, each meaning counted separately. Click a row for the full card.</div>';
+  h += '<div class="wbar"><div class="chips">' + WF.map(([k, l]) => '<span class="chip ' + (mw.f === k ? 'on' : '') + '" data-wf="' + k + '">' + l + ' ' + all.filter(wmatch[k]).length + '</span>').join('') + '</div></div>';
+  h += '<div class="wbar"><input type="text" id="wq" placeholder="Search a word or meaning…" value="' + esc(mw.q) + '"><select id="wl"><option value="">Any level</option>' + S.levels.map(L => '<option' + (mw.level === L ? ' selected' : '') + '>' + L + '</option>').join('') + '</select><select id="wk"><option value="">Any kind</option>' + S.kinds.map(k => '<option' + (mw.kind === k ? ' selected' : '') + '>' + k + '</option>').join('') + '</select></div>';
+  if (!rows.length) h += '<div class="hint">' + (all.length ? 'Nothing matches.' : 'No words yet. They appear here as soon as a session proposes them or you use them.') + '</div>';
+  else {
+    h += '<table class="wt"><thead><tr>' + th('word', 'Word') + th('level', 'Level') + '<th class="hidem">Meaning</th>' + th('stage', 'Progress') + th('ok', 'Right', 'num') + th('bad', 'Wrong', 'num') + th('met', 'Seen', 'num hidem') + th('used', 'Last used', 'hidem') + th('due', 'Next') + '</tr></thead><tbody>';
+    for (const i of rows){
+      h += '<tr class="r" data-id="' + i.id + '"><td><b>' + esc(i.word) + '</b> <span class="pos">' + esc(i.pos || '') + '</span>' + (i.sense ? '<div class="sense">' + esc(i.sense) + '</div>' : '') + '</td><td>' + (i.level ? '<span class="lvl" style="background:var(--' + i.level + ')">' + i.level + '</span>' : '') + '</td><td class="def hidem">' + esc(i.definition || '') + '</td><td>' + stageDots(i.stage) + '</td><td class="num">' + i.used_correctly + '</td><td class="num">' + i.used_incorrectly + '</td><td class="num hidem">' + i.exposures + '</td><td class="hidem">' + ago(i.last_used) + '</td><td>' + dueText(i) + '</td></tr>';
+      if (mw.open.has(i.id)) h += '<tr class="x"><td colspan="9">' + cardHtml(i, false).replace('class="card ', 'class="card open ') + '</td></tr>';
+    }
+    h += '</tbody></table><div class="hint" style="margin-top:8px">' + rows.length + ' shown. Progress fills as you use a word correctly on separate days; “Seen” counts how often the AI used it in front of you.</div>';
+  }
+  $('#wordsIn').innerHTML = h;
+  $('#wq').oninput = e => { mw.q = e.target.value; const p = e.target.selectionStart; renderWords(); const n = $('#wq'); n.focus(); n.setSelectionRange(p, p); };
+  $('#wl').onchange = e => { mw.level = e.target.value; renderWords(); };
+  $('#wk').onchange = e => { mw.kind = e.target.value; renderWords(); };
+}
+$('#wordsIn').addEventListener('click', async e => {
+  const f = e.target.closest('[data-wf]'); if (f){ mw.f = f.dataset.wf; return renderWords(); }
+  const so = e.target.closest('[data-sort]'); if (so){ if (mw.sort === so.dataset.sort) mw.dir = -mw.dir; else { mw.sort = so.dataset.sort; mw.dir = so.dataset.sort === 'word' ? 1 : -1; } return renderWords(); }
+  const act = e.target.closest('[data-act]'), card = e.target.closest('.card');
+  if (act && card){
+    await api('/api/item', {session:cur, id:+card.dataset.id, action:act.dataset.act}).catch(x => alert(x.message));
+    mw.items = (await api('/api/mywords')).items; lastPaneKey = ''; return renderWords();
+  }
+  if (card) return;
+  const r = e.target.closest('tr.r'); if (r){ const id = +r.dataset.id; mw.open.has(id) ? mw.open.delete(id) : mw.open.add(id); renderWords(); }
+});
+
+$('#newBtn').onclick = openDlg;
+
+/* ---------- voice: the browser's own speech engines, no keys ---------- */
+function saveVoice(){ try{ localStorage.setItem('dilai_voice', JSON.stringify({speak:V.speak, voice:V.voice, rate:V.rate, pause:V.pause})); }catch(e){} }
+function voices(){ return TTS ? speechSynthesis.getVoices().filter(v => /^en[-_]/i.test(v.lang)) : []; }
+function pickVoice(){
+  const vs = voices(); if (!vs.length) return null;
+  const chosen = vs.find(v => v.name === V.voice); if (chosen) return chosen;
+  const want = S && S.settings.variant === 'uk' ? 'en-GB' : 'en-US';
+  const loc = vs.filter(v => v.lang.replace('_', '-') === want);
+  const good = l => l.find(v => /premium|enhanced|natural|siri|google/i.test(v.name)) || l.find(v => /samantha|daniel|ava|alex|karen/i.test(v.name));
+  return good(loc) || loc[0] || good(vs) || vs[0];
+}
+function sayText(text){
+  if (!TTS) return;
+  // one utterance per sentence: long utterances stall in Chrome
+  for (const part of text.replace(/\s+/g, ' ').match(/[^.!?…]+[.!?…]+["”’')\]]*\s*|[^.!?…]+$/g) || []){
+    if (!/[A-Za-z0-9]/.test(part)) continue;
+    const u = new SpeechSynthesisUtterance(part.trim()), v = pickVoice();
+    if (v){ u.voice = v; u.lang = v.lang; } else u.lang = 'en-US';
+    u.rate = V.rate;
+    speechSynthesis.speak(u);
+  }
+}
+function voiceFeed(){
+  // reads a reply aloud sentence by sentence while it is still being written
+  const ses = S && S.session; if (!ses || !TTS || !(V.speak || V.talk)){ V.key = null; return; }
+  const n = ses.messages.length;
+  if (ses.busy){ const k = ses.id + ':' + n; if (V.key !== k){ V.key = k; V.off = 0; } }
+  if (!V.key) return;
+  let text, done = false;
+  if (ses.busy){ text = ses.partial || ''; }
+  else {
+    const last = ses.messages[n - 1];
+    if (!last || last.role !== 'assistant' || V.key !== ses.id + ':' + (n - 1)){ V.key = null; return; }
+    text = last.text; done = true;
+  }
+  let rest = text.slice(V.off);
+  if (!done){ const m = rest.match(/^[\s\S]*[.!?…]["”’')]*\s/); rest = m ? m[0] : ''; }
+  if (rest){ V.off += rest.length; sayText(rest); }
+  if (done) V.key = null;
+}
+function listen(on){
+  V.want = on;
+  if (!on){ if (V.rec) try{ V.rec.stop(); }catch(e){} return drawVoice(); }
+  if (!SR || V.rec) return drawVoice();
+  const r = new SR();
+  r.lang = S && S.settings.variant === 'uk' ? 'en-GB' : 'en-US';
+  r.continuous = true; r.interimResults = true;
+  const box = $('#input');
+  V.base = box.value.trim() ? box.value.trimEnd() + ' ' : ''; V.fin = ''; V.last = Date.now();
+  r.onresult = e => {
+    let interim = '';
+    for (let i = e.resultIndex; i < e.results.length; i++){ const t = e.results[i][0].transcript; if (e.results[i].isFinal) V.fin += t.trim() + ' '; else interim += t; }
+    box.value = (V.base + V.fin + interim).replace(/\s+/g, ' '); autosize(); box.scrollTop = box.scrollHeight;
+    V.spoken = true; V.last = Date.now();
+  };
+  r.onerror = e => {
+    if (e.error === 'not-allowed' || e.error === 'service-not-allowed'){ V.want = false; V.talk = false; V.msg = 'The microphone is blocked. Allow it for this page in the browser’s address bar, then try again.'; }
+    else if (e.error === 'network'){ V.want = false; V.talk = false; V.msg = 'Speech recognition could not reach its service. Check the connection, or try Safari.'; }
+  };
+  r.onend = () => { V.rec = null; if (V.want) listen(true); else drawVoice(); };
+  try{ r.start(); V.rec = r; V.msg = ''; }catch(e){ V.msg = 'Could not start the microphone: ' + e.message; V.want = false; }
+  drawVoice();
+}
+function drawVoice(){
+  const mic = $('#micBtn'), talk = $('#talkBtn');
+  mic.style.display = talk.style.display = SR ? '' : 'none';
+  mic.classList.toggle('live', !!V.rec); mic.textContent = V.rec ? 'Stop' : 'Speak';
+  talk.classList.toggle('on', V.talk); talk.textContent = V.talk ? 'End talk mode' : 'Talk mode';
+  const speaking = TTS && (speechSynthesis.speaking || speechSynthesis.pending);
+  let t = V.msg || '';
+  if (!t && V.rec) t = V.talk ? 'Listening… your message is sent when you pause for ' + V.pause.toFixed(1) + ' s.' : 'Listening… click Stop when you are done, fix anything it misheard, then Send.';
+  else if (!t && V.talk) t = speaking ? 'Speaking… start talking or click Speak to interrupt.' : (S && S.session && S.session.busy ? 'Thinking…' : '');
+  $('#vstat').textContent = t;
+}
+$('#micBtn').onclick = () => { if (TTS) speechSynthesis.cancel(); V.msg = ''; listen(!V.rec); };
+$('#talkBtn').onclick = () => {
+  V.talk = !V.talk; V.msg = '';
+  if (V.talk){ if (TTS){ speechSynthesis.cancel(); speechSynthesis.speak(new SpeechSynthesisUtterance(' ')); } listen(true); }
+  else { listen(false); if (TTS && !V.speak) speechSynthesis.cancel(); }
+  drawVoice();
+};
+setInterval(() => {
+  if (!S || !S.session) return;
+  const speaking = TTS && (speechSynthesis.speaking || speechSynthesis.pending), busy = S.session.busy;
+  if (V.talk){
+    if (V.rec && V.spoken && $('#input').value.trim() && Date.now() - V.last > V.pause * 1000) send();
+    else if (!V.rec && !V.want && !busy && !speaking && !V.key && !document.body.classList.contains('words') && S.session.source !== 'desktop') listen(true);
+  }
+  drawVoice();
+}, 300);
+document.addEventListener('click', e => {
+  const b = e.target.closest('[data-saytext]'); if (b){ speechSynthesis.cancel(); sayText(b.dataset.saytext); }
+  if (e.target.id === 'voiceTest'){ speechSynthesis.cancel(); sayText('This is how I sound. Shall we start?'); }
+});
+if (TTS) speechSynthesis.onvoiceschanged = () => { if (tab === 'settings'){ lastPaneKey = ''; renderPane(); } };
+
+function render(){ renderSessions(); renderTabs(); renderChat(); renderPane(); voiceFeed(); }
+refresh();
+</script>
+</body>
+</html>

@@ -1,0 +1,6 @@
+# Cambridge English Profile data and everything personal: never published
+data/
+__pycache__/
+*.pyc
+.DS_Store
+.claude/
